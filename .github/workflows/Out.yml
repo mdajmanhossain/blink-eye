@@ -1,5 +1,4 @@
 name: Build Tauri Meteor Template
-
 on:
   push:
     branches: [ blink ]
@@ -13,19 +12,28 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os:
-          - macos-latest
-          - ubuntu-latest
-          - windows-latest
+        platform: [macos-latest, ubuntu-22.04, windows-latest]
+        include:
+          - platform: macos-latest
+            args: '--target aarch64-apple-darwin'
+            arch: arm64
+          - platform: macos-latest
+            args: '--target x86_64-apple-darwin'
+            arch: x64
+          - platform: ubuntu-22.04
+            args: ''
+          - platform: windows-latest
+            args: ''
 
-    runs-on: ${{ matrix.os }}
+    runs-on: ${{ matrix.platform }}
+    
     steps:
-    - uses: actions/checkout@v2
-
-    - name: setup Rust cache
-      uses: actions/cache@v2
+    - uses: actions/checkout@v4
+    
+    - name: Setup Rust cache
+      uses: actions/cache@v4
       with:
-        key: ${{ matrix.os }}-${{ hashFiles('packages/admin/src-tauri/Cargo.lock') }}
+        key: ${{ matrix.platform }}-${{ hashFiles('packages/admin/src-tauri/Cargo.lock') }}
         path: |
             ~/.cargo/registry/index
             ~/.cargo/registry/cache
@@ -36,40 +44,58 @@ jobs:
       uses: actions/setup-node@v4
       with:
         node-version: 'latest'
-
+        
     - name: Install BUN Globally
       run: npm install -g bun
-
-    - name: 🦀 Install Rust
-      uses: actions-rs/toolchain@v1
-      with: { toolchain: stable }
-
-    - name: install dependencies (ubuntu only)
+      
+    - name: Install Rust stable
+      uses: dtolnay/rust-toolchain@stable
+      with:
+        targets: ${{ matrix.platform == 'macos-latest' && 'aarch64-apple-darwin,x86_64-apple-darwin' || '' }}
+        
+    - name: Install dependencies (ubuntu only)
       if: matrix.platform == 'ubuntu-22.04'
       run: |
         sudo apt-get update
-        sudo apt-get install -y libwebkit2gtk-4.0-dev libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf
+        sudo apt-get install -y \
+          libgtk-3-dev \
+          libwebkit2gtk-4.0-dev \
+          libwebkit2gtk-4.1-dev \
+          libappindicator3-dev \
+          librsvg2-dev \
+          patchelf \
+          build-essential \
+          curl \
+          wget \
+          file \
+          libssl-dev \
+          libayatana-appindicator3-dev \
+          software-properties-common \
+          libasound2-dev \
+          libgstreamer1.0-dev \
+          libgstreamer-plugins-base1.0-dev \
+          libgstreamer-plugins-bad1.0-dev
         
     - name: Install Bun.js dependencies
       run: bun install
-
+      
     - name: Install Tauri CLI
-      run: cargo install tauri-cli # Install Tauri dependencies
-
+      run: cargo install tauri-cli
+      
     - name: Build application
       run: bun run tauri build
-
+      
     - name: Upload release artifacts
       uses: actions/upload-artifact@v4
       with:
-        name: release-${{ matrix.os }}
+        name: release-${{ matrix.platform }}
         path: src-tauri/target/release/bundle/**
-
+        
     - uses: tauri-apps/tauri-action@v0
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
-        tagName: app-v__VERSION__ # the action automatically replaces \_\_VERSION\_\_ with the app version.
+        tagName: app-v__VERSION__
         releaseName: 'App v__VERSION__'
         releaseBody: 'See the assets to download this version and install.'
         releaseDraft: true
