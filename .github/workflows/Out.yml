@@ -1,4 +1,4 @@
-name: Build Tauri Meteor Template
+name: Release the Blink Eye APP
 on:
   push:
     branches: [ blink ]
@@ -86,3 +86,9 @@ jobs:
         releaseDraft: true
         prerelease: false
         args: ${{ matrix.args }}
+        
+    - name: Upload release artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: release-${{ matrix.platform }}
+        path: src-tauri/target/release/bundle/**
