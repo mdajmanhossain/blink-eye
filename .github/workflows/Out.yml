@@ -1,4 +1,4 @@
-name: Build Tauri Meteor Template.
+name: Build Tauri Meteor Template
 
 on:
   push:
@@ -35,7 +35,7 @@ jobs:
       with:
         node-version: 'latest'
 
-    - name: Install pnpm
+    - name: Install BUN Globally
       run: npm install -g bun
 
     - name: 🦀 Install Rust
@@ -46,7 +46,7 @@ jobs:
       if: matrix.os == 'ubuntu-latest'
       run: |
         sudo apt-get update
-         sudo apt-get install -y libgtk-3-dev webkit2gtk-4.0 librsvg2-dev patchelf
+        sudo apt-get install -y libgtk-3-dev webkit2gtk-4.0 librsvg2-dev patchelf
         
     - name: Install Bun.js dependencies
       run: bun install
@@ -61,4 +61,29 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         name: release-${{ matrix.os }}
-        path: src-tauri/target/release/bundle/
+        path: src-tauri/target/release/bundle/**
+
+    - name: Create GitHub Release
+      id: create_release
+      uses: actions/create-release@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        tag_name: "v0.1.0"
+        release_name: "Blink Eye Release v0.1.0"
+        draft: false
+        prerelease: false
+
+    - name: Upload .dmg, .exe, and .msi files to Release
+      if: ${{ matrix.os == 'macos-latest' || matrix.os == 'windows-latest' }}
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        asset_path: |
+          src-tauri/target/release/bundle/dmg/*.dmg
+          src-tauri/target/release/bundle/msi/*.msi
+          src-tauri/target/release/bundle/nsis/*.exe
+        asset_name: ${{ matrix.os }}-release
+        asset_content_type: application/octet-stream
