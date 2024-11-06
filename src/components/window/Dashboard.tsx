@@ -16,6 +16,7 @@ const Dashboard = () => {
           <TabsList>
             <TabsTrigger value="settings">Settings</TabsTrigger>
             <TabsTrigger value="usagetime">Usage Time</TabsTrigger>
+            <TabsTrigger value="usagetime">Update</TabsTrigger>
           </TabsList>
           <div className="flex items-center space-x-2">
             <ModeToggle />
