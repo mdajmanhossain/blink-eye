@@ -5,8 +5,10 @@ import { ModeToggle } from "../ThemeToggle";
 import { Separator } from "../ui/seperator";
 import Settings from "./Settings";
 import { Button } from "../ui/button";
+import useUpdater from "../../hooks/useUpdater";
 
 const Dashboard = () => {
+  useUpdater();
   return (
     <div className="container p-8">
       <Tabs defaultValue="settings" className="w-full">
@@ -14,6 +16,7 @@ const Dashboard = () => {
           <TabsList>
             <TabsTrigger value="settings">Settings</TabsTrigger>
             <TabsTrigger value="usagetime">Usage Time</TabsTrigger>
+            <TabsTrigger value="usagetime">Update</TabsTrigger>
           </TabsList>
           <div className="flex items-center space-x-2">
             <ModeToggle />
